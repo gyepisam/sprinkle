@@ -28,8 +28,17 @@ module Sprinkle
       end
 
       def process(name, commands, roles, suppress_and_return_failures = false)
-        return process_with_gateway(name, commands, roles) if gateway_defined?
-        process_direct(name, commands, roles)
+        if gateway_defined?
+          process_with_gateway(name, commands, roles)
+        else
+          process_direct(name, commands, roles)
+        end
+      rescue Net::SSH::ChannelRequestFailed
+        if suppress_and_return_failures
+          return false
+        else
+          raise
+        end 
       end
 
       def transfer(name, source, destination, roles, recursive = true, suppress_and_return_failures = false)
@@ -83,8 +92,28 @@ module Sprinkle
         
         def execute_on_connection(commands, connection)
           Array(commands).each do |command|
-            connection.exec! command do |ch, stream, data|
-              logger.send((stream == :stderr ? 'error' : 'debug'), data)
+            connection.open_channel do |new_ch|            
+              new_ch.exec command do |ch, command_started|
+                if !command_started
+                  raise Net::SSH::ChannelRequestFailed, "exec failed on: #{command}"
+                else
+                  ch.on_request("exit-status") { |_, data| ch[:exit] = data.read_long }
+
+                  ch.on_close do |_|
+                    if ch[:exit] != 0 
+                      raise Net::SSH::ChannelRequestFailed, "command #{command} terminated with exit status (#{ch[:exit]})"
+                    end
+                  end
+
+                  ch.on_data do |_, data|
+                    logger.send('error', data)
+                  end
+
+                  ch.on_extended_data do |_, data|
+                    logger.send('debug', data)
+                  end
+                end
+              end
             end
           end
         end
