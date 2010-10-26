@@ -59,6 +59,12 @@ module Sprinkle
   # behavior, set the -f flag on the sprinkle script or set the
   # :force option to true in Sprinkle::OPTIONS
   #
+  # Note that apt packages are automatically verified with a block like:
+  # 
+  #  verify { has_apt? PACKAGE_NAME }
+  #
+  # where PACKAGE_NAME is the name of the apt package.
+  #
   # For more information on verifications and to see all the available
   # verifications, see Sprinkle::Verify
   #
@@ -77,6 +83,16 @@ module Sprinkle
   # share the same provision. If this is the case, when running Sprinkle, the 
   # script will ask you which provision you want to install. At this time, you
   # can only install one. 
+  #
+  # == Configurations
+  #
+  # Rather than using the transfer command, it may be more convenient to list
+  # the configuration files associated with a package, using the configuration
+  # command.
+  #
+  # configuration %w(/file/path/1 /file/path/2), :prefix => 'source/base/dir'
+  #
+  # The files will be verified for existence and transfered if necessary.
   #
   # == Meta-Packages
   #
@@ -119,7 +135,7 @@ module Sprinkle
         @optional = []
         @verifications = []
         @installers = []
-        self.instance_eval &block
+        self.instance_eval(&block)
       end
 
       def freebsd_pkg(*names, &block)
@@ -192,9 +208,86 @@ module Sprinkle
         @installers << Sprinkle::Installers::Transfer.new(self, source, destination, options, &block)
       end
 
+      # Always renders always creates parent directories.
+      def template(source, options = {}, &block)
+        destination = Sprinkle.extract_destination(source) 
+        source = Sprinkle.prefix_config_dir(source)
+        transfer(source, destination, options.merge(:render => true, :recursive => false, :mkdir => true), &block)
+      end
+
       def verify(description = '', &block)
         @verifications << Sprinkle::Verify.new(self, description, &block)
       end  
+
+      def configuration(*files, &block)
+        
+        files = files.flatten
+
+        options = if files.last.is_a?(Hash)
+                    files.pop
+                  else
+                    {}
+                  end
+
+        files.each do |file|
+          source_file = Sprinkle.prefix_config_dir(file)
+          destination_file = Sprinkle.extract_destination(file)
+          @installers << Sprinkle::Installers::Transfer.new(self,
+                                                            source_file,
+                                                            destination_file,
+                                                            options.update(:mkdir => true), &block)
+
+          verify("File exists/checksum #{destination_file}") do
+            checksum_match?(source_file, destination_file)
+          end
+        end
+      end
+
+      alias_method :files, :configuration
+
+      # Include all files in specified directories or files.
+      def config_dir(*paths, &block)
+        require 'find'
+        
+        files = []
+
+        Find.find(*paths.flatten.map { |path| Sprinkle.prefix_config_dir(path) }) do |path|
+          next if Sprinkle.excludable_file?(path)
+          if File.file?(path)
+            files << path.gsub(/^#{Sprinkle::OPTIONS[:config_dir]}/, '')
+          end
+        end
+
+        configuration(*files, &block)
+      end
+
+      # Given a list of apt package names, create packages and require them
+      # This is called in the context of a package that requires a list of
+      # other packages that don't need special handling.
+      # The dependent packages do not need to be manually defined
+      def require_apt (*names)
+        package_names = names.flatten.map do |apt_name|
+          package_name = ['apt_package', apt_name.gsub(/\W/, '_')].join('_').to_sym
+          package package_name do
+            apt apt_name
+          end
+          package_name
+        end
+        requires package_names
+      end
+
+      # See comments about apt packages above, but applies to gem packages.
+      def require_gem(*names)
+        gem_names = names.flatten.map do |gem_name|
+          package_name = ['gem_package', gem_name.gsub(/\W/, '_')].join('_').to_sym
+          package package_name do
+            gem gem_name
+          end
+          package_name
+        end
+        requires gem_names
+      end
+
       
       def process(deployment, roles)
         return if meta_package?
@@ -291,7 +384,7 @@ module Sprinkle
           else
             package = choose do |menu|
               menu.prompt = "Multiple choices exist for virtual package #{name}"
-              menu.choices *packages.collect(&:to_s)
+              menu.choices(*packages.collect(&:to_s))
             end
             package = Sprinkle::Package::PACKAGES[package]
           end

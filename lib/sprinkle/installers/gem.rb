@@ -34,6 +34,12 @@ module Sprinkle
       def initialize(parent, gem, options = {}, &block) #:nodoc:
         super parent, options, &block
         @gem = gem
+
+        unless options[:verify]
+          verify do
+            has_gem? gem
+          end
+        end 
       end
 
       def source(location = nil) #:nodoc:

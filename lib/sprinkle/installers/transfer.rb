@@ -79,6 +79,13 @@ module Sprinkle
 		#     transfer 'files/nginx.conf', '/etc/nginx.conf', :render => true
 		#   end
 		#
+    # If you pass the option :mkdir => true, any necessary directories will be created on
+    # the remote side.
+    #
+    #		package :apache_conf do
+		#     transfer 'files/domain.cert', '/etc/apache/ssl/domain.cert', :mkdir => true
+		#   end
+    #
 		# Finally, should you need to run commands before or after the file transfer (making
 		# directories or changing permissions), you can use the pre/post :install directives
 		# and they will be run.
@@ -131,6 +138,12 @@ module Sprinkle
 
         unless Sprinkle::OPTIONS[:testing]
 					pre = pre_commands(:install)
+
+          if @options[:mkdir]
+            dest_dir = File.dirname(@destination).gsub(/'/, "\\'")
+            pre << %Q!test -d '#{dest_dir}' || mkdir -p '#{dest_dir}'!
+          end
+
 					unless pre.empty?
 						sequence = pre; sequence = sequence.join('; ') if sequence.is_a? Array
 						logger.info "#{@package.name} pre-transfer commands: #{sequence} for roles: #{roles}\n"
@@ -152,6 +165,34 @@ module Sprinkle
           @delivery.transfer(@package.name, sourcepath, @destination, roles, recursive)
 					
 					post = post_commands(:install)
+         
+          
+          # accept options and synonyms for basic commands 
+          ch_cmds = {
+            'chown' => %w(owner),
+            'chgrp' => %w(group),
+            'chmod' => %w(access),
+          }
+
+          ch_cmds.each do |cmd, synonyms|
+             if opt_name = [synonyms, cmd].flatten.detect { |opt| @options.key?(opt.to_sym) }
+               value = @options[opt_name.to_sym]
+               
+               # if an integer chmod value is passed, convert it into
+               # canonical octal form.
+               # honestly, chmod should accept integer representations!
+               if cmd == 'chmod' && value.is_a?(Fixnum)
+                 value = '%0.4o' % value
+               end
+
+              post << [cmd,
+                if @options[:verbose] then '-v' end,
+                value,
+                @destination,
+              ].compact.join(' ')
+             end
+          end
+
 					unless post.empty?
 						sequence = post; sequence = sequence.join('; ') if sequence.is_a? Array
 						logger.info "#{@package.name} post-transfer commands: #{sequence} for roles: #{roles}\n"

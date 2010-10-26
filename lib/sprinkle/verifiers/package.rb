@@ -14,13 +14,18 @@ module Sprinkle
           case Sprinkle::Installers::InstallPackage.installer
             when :yum
               @commands << "[ -n \"`yum list installed #{pak} 2> /dev/null | egrep -e \\\"#{pak}\\\"`\" ]"
+            when :apt
+              @commands << "dpkg-query -s #{pak} | egrep -q '^Status.+ installed$'"
             else
               raise "Unknown InstallPackage.installer"
           end
         end
       end
 
+      alias_method :has_package?, :has_package  
       alias_method :has_packages, :has_package  
+      alias_method :has_packages?, :has_package  
+
     end
   end
 end

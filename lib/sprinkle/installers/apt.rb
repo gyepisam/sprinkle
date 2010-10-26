@@ -36,7 +36,11 @@ module Sprinkle
         options.update(packages.pop) if packages.last.is_a?(Hash)
         
         super parent, options, &block
-        
+
+        unless options[:verify]
+          verify { has_apt? packages }
+        end
+
         @packages = packages
       end
 

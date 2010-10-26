@@ -32,6 +32,10 @@ module Sprinkle
         super parent, options, &block
         @text = text
         @path = path
+
+        if options[:auto_verify]
+          verify { file_contains path, text }
+        end
       end
 
       protected

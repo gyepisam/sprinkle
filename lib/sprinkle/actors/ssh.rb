@@ -27,7 +27,16 @@ module Sprinkle
         @options[:password] = password
       end
 
+      def use_sudo(boolean)
+        @options[:use_sudo] = boolean
+      end
+
       def process(name, commands, roles, suppress_and_return_failures = false)
+
+        if @options[:use_sudo]
+          commands = commands.map { |cmd| 'sudo  %s' % cmd }
+        end
+
         if gateway_defined?
           process_with_gateway(name, commands, roles)
         else

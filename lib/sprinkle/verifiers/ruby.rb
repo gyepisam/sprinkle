@@ -20,6 +20,15 @@ module Sprinkle
         version = version.nil? ? '' : version.gsub('.', '\.')
         @commands << "sudo gem list | grep -e '^#{name} (.*#{version}.*)$'"
       end
+
+      def has_gem?(name, version=nil)
+        cmd = "gem search #{name} -q -l -V"
+        if version
+         cmd << "--version #{version}" 
+        end
+        cmd << " | egrep -q '^#{name}\\b'"
+        @commands << cmd 
+      end
     end
   end
 end

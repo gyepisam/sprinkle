@@ -11,6 +11,10 @@ module Sprinkle
       def has_directory(dir)
         @commands << "test -d #{dir}"
       end
+      alias_method :has_directory?, :has_directory
+      alias_method :has_dir, :has_directory
+      alias_method :has_dir?, :has_directory
+
     end
   end
 end
