@@ -10,6 +10,7 @@ rescue LoadError
 end
 
 require 'optparse'
+require File.dirname(__FILE__) + '/../lib/sprinkle'
 
 # NOTE: the option -p/--path= is given as an example, and should probably be replaced in your application.
 
@@ -50,6 +51,8 @@ BANNER
           "Verbose output") { |OPTIONS[:verbose]| }
   opts.on("-c", "--cloud",
           "Show powder cloud, ie. package hierarchy and installation order") { |OPTIONS[:cloud]| }
+  opts.on("-F=PATH", "--files",
+          "Path to configuration files. Defaults to directory named files in same directory as script") { |value| OPTIONS[:config_dir] = value }
   opts.on("-f", "--force",
           "Force installation of all packages even if it is detected that it has been previously installed") { |OPTIONS[:force]| }
   opts.on("-h", "--help",
@@ -62,22 +65,25 @@ BANNER
 end
 
 def force_mode(options)
-  Sprinkle::OPTIONS[:force] = OPTIONS[:force] || false
+  Sprinkle::OPTIONS[:force] = options.fetch(:force, false)
 end
 
 def operation_mode(options)
-  Sprinkle::OPTIONS[:testing] = OPTIONS[:testing] || false
+  Sprinkle::OPTIONS[:testing] = options.fetch(:testing, false)
 end
 
 def powder_cloud(options)
-  Sprinkle::OPTIONS[:cloud] = OPTIONS[:cloud] || false
+  Sprinkle::OPTIONS[:cloud] = options.fetch(:cloud, false)
 end
 
 def log_level(options)
   Object.logger.level = ActiveSupport::BufferedLogger::Severity::DEBUG if options[:verbose]
 end
 
-require File.dirname(__FILE__) + '/../lib/sprinkle'
+def config_dir!(options, powder)
+  Sprinkle::OPTIONS[:config_dir] = OPTIONS.fetch(:config_dir, File.expand_path((File.join(File.dirname(powder), 'files'))))
+end
+
 
 powder = OPTIONS[:path]
 raise "Sprinkle script is not readable: #{powder}" unless File.readable?(powder)
@@ -86,5 +92,7 @@ force_mode(OPTIONS)
 operation_mode(OPTIONS)
 powder_cloud(OPTIONS)
 log_level(OPTIONS)
+config_dir!(OPTIONS, powder)
+
 
 Sprinkle::Script.sprinkle File.read(powder), powder
