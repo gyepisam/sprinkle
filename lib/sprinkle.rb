@@ -16,7 +16,43 @@ Dir[File.dirname(__FILE__) + '/sprinkle/verifiers/*.rb'].each { |e| require e }
 # Configuration options
 module Sprinkle
   OPTIONS = { :testing => false, :verbose => false, :force => false }
+
+  def self.prefix_config_dir(path)
+    if OPTIONS.key?(:config_dir) && !path.start_with?(OPTIONS[:config_dir])
+      File.join(OPTIONS[:config_dir], path)
+    else
+      path
+    end
+  end
+
+  # Convert file path like mysql/./etc/mysql/xyz.conf to /etc/mysql/xyz.conf
+  def self.extract_destination(path)
+    %r!/\.(/.+)!.match(path) ? $1 : path
+  end
+
+  # ignore the following file
+  # '.' or '..' - directory aliases
+  # and any files that would be ignored by rsync version 3.0.7 with the -C flag
+  def self.excludable_file?(name)
+
+    if name =~ /^\.\.?$/
+      return true 
+    else
+      # list copied from rsync man page
+      patterns = %w(RCS  SCCS  CVS  CVS.adm   RCSLOG   cvslog.*   tags   TAGS
+                  .make.state  .nse_depinfo *~ #* .#* ,* _$* *$ *.old *.bak
+                  *.BAK *.orig *.rej .del-* *.a *.olb *.o *.obj *.so  *.exe
+                  *.Z *.elc *.ln core .svn/ .git/ .bzr/)
+
+      patterns << '.swp'
+
+      return(patterns.any? { |pattern| File.fnmatch?(pattern, name) })
+    end
+  end
 end
+
+
+
 
 # Object is extended to give the package, policy, and deployment methods. To
 # read about each method, see the corresponding module which is included.
