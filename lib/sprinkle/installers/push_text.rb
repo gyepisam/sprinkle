@@ -24,7 +24,20 @@ module Sprinkle
     # A special verify step exists for this very installer
     # its known as file_contains, it will test that a file indeed
     # contains a substring that you send it.
+    # Using the :auto_verify => true option will trigger this verify step.
     #
+    #
+    #   package :magic_beans do
+    #     push_text 'magic_beans', '/etc/apache2/apache2.conf', :auto_verify => true
+    #   end
+    #
+    # is then the same as saying
+    #
+    #   package :magic_beans do
+    #     push_text 'magic_beans', '/etc/apache2/apache2.conf'
+    #     verify { file_contains '/etc/apache2/apache2.conf', 'magic_beans' }
+    #   end
+
     class PushText < Installer
       attr_accessor :text, :path #:nodoc:
 
