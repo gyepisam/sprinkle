@@ -13,6 +13,7 @@ Dir[File.dirname(__FILE__) + '/sprinkle/extensions/*.rb'].each { |e| require e }
 # Load up the verifiers so they can register themselves
 Dir[File.dirname(__FILE__) + '/sprinkle/verifiers/*.rb'].each { |e| require e }
 
+
 # Configuration options
 module Sprinkle
   OPTIONS = { :testing => false, :verbose => false, :force => false }
@@ -51,12 +52,6 @@ module Sprinkle
       patterns << '.swp'
 
       return(patterns.any? { |pattern| File.fnmatch?(pattern, name) })
-    end
-  end
-
-  def self.make_synonym(name, *synonyms)
-    synonyms.each do |synonym|
-      alias_method synonym, name
     end
   end
 end

@@ -15,20 +15,12 @@ module Sprinkle
         @commands << "ruby -e \"#{files.join(';')}\""
       end
       
-      # Checks if a gem exists by calling "sudo gem list" and grepping against it.
+      # check for gem existence by querying
       def has_gem(name, version=nil)
-        version = version.nil? ? '' : version.gsub('.', '\.')
-        @commands << "sudo gem list | grep -e '^#{name} (.*#{version}.*)$'"
+        @commands << ("expr match $(gem query -q -l -i -n #{name}%s) true > /dev/null" % if version then " --version #{version}" end)
       end
 
-      def has_gem?(name, version=nil)
-        cmd = "gem search #{name} -q -l -V"
-        if version
-         cmd << "--version #{version}" 
-        end
-        cmd << " | egrep -q '^#{name}\\b'"
-        @commands << cmd 
-      end
+      alias_method :has_gem?, :has_gem
     end
   end
 end
