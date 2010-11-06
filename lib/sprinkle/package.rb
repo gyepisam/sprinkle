@@ -244,6 +244,7 @@ module Sprinkle
       end
 
       alias_method :files, :configuration
+      alias_method :file, :configuration
 
       # Include all files in specified directories or files.
       def config_dir(*paths, &block)
