@@ -17,6 +17,7 @@ Dir[File.dirname(__FILE__) + '/sprinkle/verifiers/*.rb'].each { |e| require e }
 module Sprinkle
   OPTIONS = { :testing => false, :verbose => false, :force => false }
 
+  # Given a path, prepends the config_dir to it, if necessary and possible.
   def self.prefix_config_dir(path)
     if OPTIONS.key?(:config_dir) && !path.start_with?(OPTIONS[:config_dir])
       File.join(OPTIONS[:config_dir], path)
@@ -26,15 +27,18 @@ module Sprinkle
   end
 
   # Convert file path like mysql/./etc/mysql/xyz.conf to /etc/mysql/xyz.conf
+  # Given a file path with an '/./', returns the part after the '/.' part
+  # otherwise returns the path.
+  # This mechanism allows local files to be rooted differently from the remote version.
   def self.extract_destination(path)
     %r!/\.(/.+)!.match(path) ? $1 : path
   end
 
   # ignore the following file
   # '.' or '..' - directory aliases
-  # and any files that would be ignored by rsync version 3.0.7 with the -C flag
+  # and any files that rsync version 3.0.7 with the -C flag
+  # would also ignore.
   def self.excludable_file?(name)
-
     if name =~ /^\.\.?$/
       return true 
     else
@@ -47,6 +51,12 @@ module Sprinkle
       patterns << '.swp'
 
       return(patterns.any? { |pattern| File.fnmatch?(pattern, name) })
+    end
+  end
+
+  def self.make_synonym(name, *synonyms)
+    synonyms.each do |synonym|
+      alias_method synonym, name
     end
   end
 end
