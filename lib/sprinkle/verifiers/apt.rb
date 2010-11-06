@@ -22,7 +22,7 @@ module Sprinkle
           @commands << %Q!test "$(dpkg-query -W -f='${Status}' #{package} 2> /dev/null)" = 'install ok installed'!
         end
       end
-      make_synonyms(:has_apt, :has_apt?, :has_apts, :has_apts?)
+      make_synonym(:has_apt, :has_apt?, :has_apts, :has_apts?)
     end
   end
 end
