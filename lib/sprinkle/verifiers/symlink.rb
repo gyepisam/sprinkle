@@ -22,7 +22,7 @@ module Sprinkle
         if file.nil?
           @commands << "test -L #{symlink}"
         else
-          @commands << "test '#{file}' = `readlink #{symlink}`"
+          @commands << %Q!test -L #{symlink} && test "#{file}" = "$(readlink #{symlink})"!
         end
       end
     end
