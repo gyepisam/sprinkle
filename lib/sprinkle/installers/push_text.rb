@@ -54,7 +54,8 @@ module Sprinkle
       protected
 
         def install_commands #:nodoc:
-          "echo -e '#{@text.gsub("'", "'\\\\''").gsub("\n", '\n')}' |#{'sudo ' if option?(:sudo)}tee -a #{@path}"
+          # use fully qualified path to avoid shell builtin echo. /bin/sh builtin echo not support the -e option
+          "/bin/echo -e '#{@text.gsub("'", "'\\\\''").gsub("\n", '\n')}' |#{'sudo ' if option?(:sudo)}tee -a #{@path}"
         end
 
     end
