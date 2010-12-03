@@ -36,8 +36,12 @@ module Sprinkle
       end
 
       def checksum_match?(source, destination)
-        checksum = `md5sum - < #{source}`
-        @commands << "test -f #{destination} && (echo '#{checksum.chomp.gsub(/-/, destination)}' | md5sum -c --quiet --status -)"
+        if File.exists?(source)
+          checksum = `md5sum - < #{source}`
+          @commands << "test -f #{destination} && (echo '#{checksum.chomp.gsub(/-/, destination)}' | md5sum -c --quiet --status -)"
+        else
+          raise "checksum_match source file (#{source}) does not exist!"
+        end
       end
     end
   end
