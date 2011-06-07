@@ -51,10 +51,10 @@ BANNER
           "Verbose output") { |OPTIONS[:verbose]| }
   opts.on("-c", "--cloud",
           "Show powder cloud, ie. package hierarchy and installation order") { |OPTIONS[:cloud]| }
-  opts.on("-F=PATH", "--files",
-          "Path to configuration files. Defaults to directory named files in same directory as script") { |value| OPTIONS[:config_dir] = value }
-  opts.on("-p=PATH", "--packages",
-          "Path to packages directory. Defaults to directory named packages in same directory as script") { |value| OPTIONS[:packages_dir] = value }
+  opts.on("-F", "--files=PATH",
+          "Path to configuration files. Defaults to directory named files in same directory as script") { |OPTIONS[:config_dir]| }
+  opts.on("-P", "--packages=PATH",
+          "Path to packages directory. Defaults to directory named packages in same directory as script") { |OPTIONS[:packages_dir]| }
   opts.on("-f", "--force",
           "Force installation of all packages even if it is detected that it has been previously installed") { |OPTIONS[:force]| }
   opts.on("-h", "--help",
