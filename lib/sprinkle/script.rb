@@ -22,18 +22,9 @@ module Sprinkle
     end
 
     # Auto require all packages in specified directory or default packages directory.
-    def require_packages(basedir=nil)
-      # if a directory is specified, make sure it exists
-      if basedir
-        unless File.directory?(basedir)
-          raise "require_packages: specified directory [#{basedir}] does not exist"
-        end
-      else
-        # otherwise, assume a directory at the same level as the script file
-        basedir = File.join(File.dirname(@filename), 'packages')
-        unless File.directory?(basedir)
-          raise "require_packages: cannot determine package directory!"
-        end
+    def require_packages(basedir=Sprinkle::OPTIONS[:packages_dir])
+      unless File.directory?(basedir)
+        raise "require_packages: specified directory [#{basedir}] does not exist"
       end
       
       $: << basedir

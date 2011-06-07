@@ -53,6 +53,8 @@ BANNER
           "Show powder cloud, ie. package hierarchy and installation order") { |OPTIONS[:cloud]| }
   opts.on("-F=PATH", "--files",
           "Path to configuration files. Defaults to directory named files in same directory as script") { |value| OPTIONS[:config_dir] = value }
+  opts.on("-p=PATH", "--packages",
+          "Path to packages directory. Defaults to directory named packages in same directory as script") { |value| OPTIONS[:packages_dir] = value }
   opts.on("-f", "--force",
           "Force installation of all packages even if it is detected that it has been previously installed") { |OPTIONS[:force]| }
   opts.on("-h", "--help",
@@ -81,7 +83,13 @@ def log_level(options)
 end
 
 def config_dir!(options, powder)
+  # default to a directory at the same level as the script file
   Sprinkle::OPTIONS[:config_dir] = OPTIONS.fetch(:config_dir, File.expand_path((File.join(File.dirname(powder), 'files'))))
+end
+
+def packages_dir!(options, powder)
+  # default to a directory at the same level as the script file
+  Sprinkle::OPTIONS[:packages_dir] = OPTIONS.fetch(:packages_dir, File.expand_path((File.join(File.dirname(powder), 'packages'))))
 end
 
 
@@ -93,6 +101,7 @@ operation_mode(OPTIONS)
 powder_cloud(OPTIONS)
 log_level(OPTIONS)
 config_dir!(OPTIONS, powder)
+packages_dir!(OPTIONS, powder)
 
 
 Sprinkle::Script.sprinkle File.read(powder), powder
